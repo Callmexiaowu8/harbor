@@ -1,0 +1,7 @@
+- [x] FavoriteService 包含 projectName 可选字段
+- [x] 自动检测公共父目录：frontend/ 和 backend/ 归入同一 "blood-pressure-monitor" 组
+- [x] 单服务项目（如 EmailApp）不显示组头行，直接平铺服务行
+- [x] 多服务项目（≥2 个）显示组头行
+- [x] 编辑收藏时可手动指定项目名称覆盖自动检测结果
+- [x] 未指定 projectName 时使用自动检测的父目录
+- [x] 构建通过

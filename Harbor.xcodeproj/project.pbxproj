@@ -9,33 +9,41 @@
 /* Begin PBXBuildFile section */
 		12C52182D0391EE0F0D6FF69 /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ADB458F08ACEDDFC79F2535 /* PersistenceService.swift */; };
 		1DDCC47774461EE0938C1747 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1848153E952A6819E8DF92D4 /* EmptyStateView.swift */; };
+		22BBCC33DD44EE55FF66AA11 /* AddServiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11AABB22CC33DD44EE55FF66 /* AddServiceView.swift */; };
 		30DF0FDACE34A8DBEF3D0D4A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52481168F46E58D988673CA /* Theme.swift */; };
 		436A20CC9750DED5A05CF901 /* StatusIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C10110754D2381D224C745 /* StatusIndicatorView.swift */; };
-		4CF7080F0C65CF261AE27918 /* ProcessRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50DDEF986A33D3996F169FE5 /* ProcessRowView.swift */; };
+		44DDEE55FF66AA11BB22CC33 /* ServiceListRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CCDD44EE55FF66AA11BB22 /* ServiceListRowView.swift */; };
 		5ED35DDBA863C6B419E6DDEA /* ProcessTerminationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A529DA1603194D9FC8D098BD /* ProcessTerminationService.swift */; };
 		606BAE75BBEDB4CDAC857671 /* ServerProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAA5B331F2510F069AB8ECD /* ServerProcess.swift */; };
 		74A561C6A8641A302C410678 /* ProcessMonitorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F32C713E7F2240DFE0B9509 /* ProcessMonitorViewModel.swift */; };
 		8B7CED8FBDCAC89BBA0371C6 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E97B49890F294876F66C172 /* MainView.swift */; };
 		A2CB95C639B60406204E05E1 /* SessionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1564F2F6846B2A6866B5B2F /* SessionStatus.swift */; };
 		A49B824542002A454953E814 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2DDAE973B1A534EA0B6B2809 /* Assets.xcassets */; };
+		BB22CC33DD44EE55FF66AA11 /* FavoriteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* FavoriteService.swift */; };
+		DD44EE55FF66AA11BB22CC33 /* ServiceLaunchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC33DD44EE55FF66AA11BB22 /* ServiceLaunchService.swift */; };
 		DE932958E779E53D99D05EEB /* HarborApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D491BDCD0DEF349A09CAB647 /* HarborApp.swift */; };
 		F717A377DFCE77E88E1C7C35 /* ProcessDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D71BCB945529E4F7ADF127A /* ProcessDiscoveryService.swift */; };
+		FF66AA11BB22CC33DD44EE55 /* ProjectManifestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE55FF66AA11BB22CC33DD44 /* ProjectManifestService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		05C10110754D2381D224C745 /* StatusIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIndicatorView.swift; sourceTree = "<group>"; };
+		11AABB22CC33DD44EE55FF66 /* AddServiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddServiceView.swift; sourceTree = "<group>"; };
 		1848153E952A6819E8DF92D4 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		2DDAE973B1A534EA0B6B2809 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E97B49890F294876F66C172 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		2F32C713E7F2240DFE0B9509 /* ProcessMonitorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMonitorViewModel.swift; sourceTree = "<group>"; };
+		33CCDD44EE55FF66AA11BB22 /* ServiceListRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceListRowView.swift; sourceTree = "<group>"; };
 		3ADB458F08ACEDDFC79F2535 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
-		50DDEF986A33D3996F169FE5 /* ProcessRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRowView.swift; sourceTree = "<group>"; };
 		6D71BCB945529E4F7ADF127A /* ProcessDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessDiscoveryService.swift; sourceTree = "<group>"; };
 		8CAA5B331F2510F069AB8ECD /* ServerProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerProcess.swift; sourceTree = "<group>"; };
 		A1564F2F6846B2A6866B5B2F /* SessionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStatus.swift; sourceTree = "<group>"; };
 		A529DA1603194D9FC8D098BD /* ProcessTerminationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTerminationService.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF66 /* FavoriteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteService.swift; sourceTree = "<group>"; };
 		C52481168F46E58D988673CA /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		CC33DD44EE55FF66AA11BB22 /* ServiceLaunchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceLaunchService.swift; sourceTree = "<group>"; };
 		D491BDCD0DEF349A09CAB647 /* HarborApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HarborApp.swift; sourceTree = "<group>"; };
+		EE55FF66AA11BB22CC33DD44 /* ProjectManifestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectManifestService.swift; sourceTree = "<group>"; };
 		F4A098FA2BAEE5F46EA2760B /* Harbor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harbor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -43,9 +51,10 @@
 		0489FD9E236AD9E54FAB2C6B /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				11AABB22CC33DD44EE55FF66 /* AddServiceView.swift */,
 				1848153E952A6819E8DF92D4 /* EmptyStateView.swift */,
 				2E97B49890F294876F66C172 /* MainView.swift */,
-				50DDEF986A33D3996F169FE5 /* ProcessRowView.swift */,
+				33CCDD44EE55FF66AA11BB22 /* ServiceListRowView.swift */,
 				05C10110754D2381D224C745 /* StatusIndicatorView.swift */,
 				C52481168F46E58D988673CA /* Theme.swift */,
 			);
@@ -63,6 +72,7 @@
 		086F009162CB0F4C96150B03 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				AA11BB22CC33DD44EE55FF66 /* FavoriteService.swift */,
 				8CAA5B331F2510F069AB8ECD /* ServerProcess.swift */,
 				A1564F2F6846B2A6866B5B2F /* SessionStatus.swift */,
 			);
@@ -104,7 +114,9 @@
 			children = (
 				3ADB458F08ACEDDFC79F2535 /* PersistenceService.swift */,
 				6D71BCB945529E4F7ADF127A /* ProcessDiscoveryService.swift */,
+				EE55FF66AA11BB22CC33DD44 /* ProjectManifestService.swift */,
 				A529DA1603194D9FC8D098BD /* ProcessTerminationService.swift */,
+				CC33DD44EE55FF66AA11BB22 /* ServiceLaunchService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -174,15 +186,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22BBCC33DD44EE55FF66AA11 /* AddServiceView.swift in Sources */,
 				1DDCC47774461EE0938C1747 /* EmptyStateView.swift in Sources */,
+				BB22CC33DD44EE55FF66AA11 /* FavoriteService.swift in Sources */,
 				DE932958E779E53D99D05EEB /* HarborApp.swift in Sources */,
 				8B7CED8FBDCAC89BBA0371C6 /* MainView.swift in Sources */,
 				12C52182D0391EE0F0D6FF69 /* PersistenceService.swift in Sources */,
 				F717A377DFCE77E88E1C7C35 /* ProcessDiscoveryService.swift in Sources */,
 				74A561C6A8641A302C410678 /* ProcessMonitorViewModel.swift in Sources */,
-				4CF7080F0C65CF261AE27918 /* ProcessRowView.swift in Sources */,
+				FF66AA11BB22CC33DD44EE55 /* ProjectManifestService.swift in Sources */,
 				5ED35DDBA863C6B419E6DDEA /* ProcessTerminationService.swift in Sources */,
 				606BAE75BBEDB4CDAC857671 /* ServerProcess.swift in Sources */,
+				DD44EE55FF66AA11BB22CC33 /* ServiceLaunchService.swift in Sources */,
+				44DDEE55FF66AA11BB22CC33 /* ServiceListRowView.swift in Sources */,
 				A2CB95C639B60406204E05E1 /* SessionStatus.swift in Sources */,
 				436A20CC9750DED5A05CF901 /* StatusIndicatorView.swift in Sources */,
 				30DF0FDACE34A8DBEF3D0D4A /* Theme.swift in Sources */,

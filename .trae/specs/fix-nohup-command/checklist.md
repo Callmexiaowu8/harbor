@@ -1,0 +1,4 @@
+- [x] nohup 命令使用子 shell 包裹（nohup /bin/zsh -c '...'）
+- [x] 启动命令中的单引号正确转义（' → '\''）
+- [x] 包含变量赋值的命令（如 PORT=3001 npm run dev）能正确执行
+- [x] xcodebuild 编译通过无错误无警告

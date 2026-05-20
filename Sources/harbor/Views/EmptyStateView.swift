@@ -27,7 +27,7 @@ struct EmptyStateView: View {
             )
 
             VStack(spacing: 8) {
-                Text("No Active Servers")
+                Text("No Active Server")
                     .font(.system(size: 16, weight: .semibold, design: .default))
                     .foregroundStyle(theme.textPrimary)
 

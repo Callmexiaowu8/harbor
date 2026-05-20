@@ -6,11 +6,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     let themeSettings = ThemeSettings()
+    let viewModel = ProcessMonitorViewModel()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
 
-        let rootView = MainView()
+        let rootView = MainView(viewModel: viewModel)
             .environment(themeSettings)
 
         popover = NSPopover()
@@ -21,11 +22,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "ferry.fill", accessibilityDescription: "Harbor")
+            button.image = NSImage(systemSymbolName: "ferry", accessibilityDescription: "Harbor")
             button.action = #selector(handleClick)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.target = self
         }
+
+        updateStatusBarIcon()
+        observeViewModel()
     }
 
     @objc private func handleClick() {
@@ -49,6 +53,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    private func updateStatusBarIcon() {
+        let hasActiveServices = viewModel.processes.contains { $0.status == .active }
+        let symbolName = hasActiveServices ? "ferry.fill" : "ferry"
+        statusItem.button?.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Harbor")
+    }
+
+    private func observeViewModel() {
+        withObservationTracking {
+            _ = viewModel.processes
+        } onChange: {
+            DispatchQueue.main.async { [weak self] in
+                self?.updateStatusBarIcon()
+                self?.observeViewModel()
+            }
+        }
     }
 }
 

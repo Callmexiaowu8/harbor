@@ -1,0 +1,17 @@
+- [ ] ProcessMonitorViewModel 的 updateFavorite 方法能根据 id 更新收藏项并持久化
+- [ ] ProcessMonitorViewModel 的 addFavoriteFromProcess 方法能从 ServerProcess 创建 FavoriteService
+- [ ] AddServiceView 支持编辑模式，传入 FavoriteService 时预填充所有字段
+- [ ] AddServiceView 编辑模式标题为"Edit Service"，确认按钮为"Save"
+- [ ] AddServiceView 编辑模式工作目录字段为只读
+- [ ] AddServiceView 编辑模式保存时保持原 id 和 createdAt
+- [ ] ServiceListRowView 的 runningOnly 行显示可点击的 star 轮廓图标（替代 StatusIndicatorView）
+- [ ] ServiceListRowView 星号轮廓图标悬停时变为主题 accent 色
+- [ ] ServiceListRowView 点击星号轮廓触发 onFavorite 回调
+- [ ] ServiceListRowView favoriteRunning 行操作区包含编辑按钮
+- [x] ServiceListRowView favoriteIdle 行操作区包含编辑按钮
+- [ ] 编辑按钮悬停变色，tooltip 为"Edit service"
+- [ ] MainView 点击星号收藏后自动弹出编辑 sheet
+- [ ] MainView 编辑 sheet 保存后调用 updateFavorite 更新配置
+- [ ] 编辑保存后列表即时反映变更
+- [ ] xcodebuild 编译通过无错误无警告
+

@@ -1,0 +1,25 @@
+- [x] BookmarkedService 数据模型定义完整，包含所有必要字段（id, name, command, workingDirectory, port, launchMode, createdAt）
+- [x] ServerProcess 新增 fullCommand 和 workingDirectory 可选字段，Codable 向后兼容
+- [x] ProcessDiscoveryService 能通过 ps 命令获取进程完整命令行
+- [x] ProcessDiscoveryService 能获取进程工作目录（复用现有 getProcessCwd）
+- [x] ProcessLaunchService 支持终端启动模式，在用户选择的终端中执行命令
+- [x] ProcessLaunchService 支持后台启动模式，stdout/stderr 写入日志文件
+- [x] 日志文件存储在 ~/Library/Logs/Harbor/ 目录下
+- [x] ProcessLaunchService 支持打开日志文件（Console.app）
+- [x] PersistenceService 支持收藏配置的加载和保存
+- [x] PersistenceService 支持终端偏好的存取
+- [x] ProcessMonitorViewModel 的 addBookmark(from:) 能从 ServerProcess 自动提取完整命令和工作目录
+- [x] ProcessMonitorViewModel 的 launchService 根据启动模式调用对应启动方法
+- [x] ProcessMonitorViewModel 的 refresh 能合并运行中进程和已收藏服务，建立关联
+- [x] displayItems 计算属性正确排序：运行中在上，已收藏未运行在下
+- [x] BookmarkedServiceRowView 使用灰色/暗淡样式展示未运行服务
+- [x] BookmarkedServiceRowView 包含启动、查看日志、编辑、删除操作按钮
+- [x] AddBookmarkView 表单包含所有必要字段，支持新建和编辑模式
+- [x] AddBookmarkView 以 Sheet 形式弹出
+- [x] ProcessRowView 新增星标收藏按钮，点击切换收藏状态
+- [x] MainView header 新增 "+" 手动添加收藏按钮
+- [x] MainView 混合展示运行中和已收藏未运行的服务
+- [x] 终端偏好设置 UI 提供常见终端选择
+- [x] 终端偏好默认为 Terminal.app
+- [x] 所有新增数据通过 UserDefaults 持久化
+- [x] swift build 编译通过无错误

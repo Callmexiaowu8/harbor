@@ -1,0 +1,13 @@
+- [x] favoriteRunning 行显示：第一行=服务名，第二行=端口徽章（accent色）+ PID
+- [x] favoriteIdle 行显示：第一行=服务名，第二行=启动命令（textTertiary）
+- [x] runningOnly 行显示：第一行=服务名，第二行=端口徽章 + PID
+- [x] detailLine 不再显示工作目录、完整进程名、运行中服务的启动命令
+- [x] 填充星标（star.fill）可点击，点击触发取消收藏确认
+- [x] 填充星标悬停时有视觉反馈和 "Remove from favorites" tooltip
+- [x] 轮廓星标（star）悬停时保持 accent 色和 "Add to favorites" tooltip
+- [x] 取消收藏确认栏提示 "Remove {name} from favorites?"
+- [x] 取消收藏不终止进程（runningOnly 继续显示）
+- [x] idleFavoriteButtons 仅保留启动+编辑按钮（无移除收藏按钮）
+- [x] runningActionButtons 保持打开+编辑+终止不变
+- [x] 整行 hover 时 tooltip 显示完整隐藏信息
+- [x] xcodebuild 编译通过无错误无警告

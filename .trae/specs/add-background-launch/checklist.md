@@ -1,0 +1,16 @@
+- [ ] ServiceLaunchService.launchInBackground 方法使用 Process 后台启动服务
+- [ ] Process.currentDirectoryURL 设置为服务的 workingDirectory
+- [ ] workingDirectory 为空时使用用户主目录
+- [ ] 使用 /bin/zsh -c 执行启动命令
+- [ ] 日志目录 ~/.harbor/logs/ 自动创建
+- [ ] 日志文件名格式为 {serviceName}-{yyyy-MM-dd_HH-mm-ss}.log
+- [ ] stdout 和 stderr 重定向到日志文件
+- [ ] 进程独立于 Harbor 运行（Harbor 退出后进程继续）
+- [ ] 启动失败时显示错误信息
+- [ ] ProcessMonitorViewModel.launchServiceInBackground 方法正确调用 ServiceLaunchService
+- [ ] idleFavoriteButtons 显示终端启动 + 后台启动 + 编辑三个按钮
+- [ ] 后台启动按钮使用 play.circle.fill 图标
+- [ ] 后台启动按钮 tooltip 为 "Launch in background"
+- [ ] 后台启动按钮悬停变色效果与终端启动按钮一致
+- [ ] MainView onLaunchBackground 回调正确连接
+- [ ] xcodebuild 编译通过无错误无警告

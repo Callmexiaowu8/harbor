@@ -1,0 +1,19 @@
+- [ ] FavoriteService 数据模型包含 id, name, workingDirectory, startCommand, port, createdAt 字段，遵循 Identifiable/Hashable/Codable/Sendable
+- [ ] PersistenceService 能正确保存和加载 FavoriteService 列表
+- [ ] ServiceLaunchService 通过 AppleScript 在 Terminal.app 中执行 cd + 启动命令
+- [ ] ServiceLaunchService 处理 Terminal 不可用等错误场景
+- [ ] ProjectManifestService 能从 package.json 提取 scripts 命令列表
+- [ ] ProjectManifestService 能从 Makefile 提取 targets
+- [ ] ProjectManifestService 能检测 Cargo.toml / pyproject.toml / go.mod 的存在并返回基本命令
+- [ ] ProcessMonitorViewModel 管理 favoriteServices 数组，支持增删和持久化
+- [ ] ProcessMonitorViewModel 的 launchService 方法正确调用 ServiceLaunchService
+- [ ] 收藏服务与运行中进程的匹配逻辑正确（按 workingDirectory 或 port 匹配）
+- [ ] AddServiceView 提供目录选择、自动检测、手动输入三种配置方式
+- [ ] AddServiceView 确认后正确调用 ViewModel 添加收藏
+- [ ] MainView header 包含添加收藏按钮，点击弹出 AddServiceView sheet
+- [ ] MainView 列表混合显示收藏服务和运行中服务，收藏在前
+- [ ] ProcessRowView 收藏项显示星标图标
+- [ ] ProcessRowView 未运行收藏项显示启动按钮
+- [ ] ProcessRowView 运行中收藏项显示终止+打开浏览器按钮
+- [ ] 应用重启后收藏列表正确恢复
+- [ ] swift build 编译通过无错误无警告

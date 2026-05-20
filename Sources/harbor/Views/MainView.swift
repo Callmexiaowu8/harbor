@@ -1,20 +1,62 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var viewModel = ProcessMonitorViewModel()
+    var viewModel: ProcessMonitorViewModel
     @State private var searchText = ""
+    @State private var showAddService = false
+    @State private var editingFavorite: FavoriteService?
     @Environment(ThemeSettings.self) private var themeSettings
 
     private var theme: HarborColors { themeSettings.colors }
 
-    private var filteredProcesses: [ServerProcess] {
-        guard !searchText.isEmpty else { return viewModel.processes }
+    private var filteredItems: [ProcessMonitorViewModel.DisplayItem] {
+        let items = viewModel.serviceListItems
+        guard !searchText.isEmpty else { return items }
         let query = searchText.lowercased()
-        return viewModel.processes.filter { process in
-            process.name.lowercased().contains(query)
-                || String(process.port).contains(query)
-                || String(process.pid).contains(query)
+
+        // 找出匹配的 serviceRow 的 id
+        var matchedServiceIds: Set<String> = []
+        for item in items {
+            if case .serviceRow(let service) = item {
+                let nameMatch = service.displayName.lowercased().contains(query)
+                let portMatch = service.displayPort.map { String($0).contains(query) } ?? false
+                let cmdMatch = service.favorite?.startCommand.lowercased().contains(query) ?? false
+                if nameMatch || portMatch || cmdMatch {
+                    matchedServiceIds.insert(service.id)
+                }
+            }
         }
+
+        // 保留匹配的 serviceRow 及其对应的 projectHeader 和 childProcessRow
+        var result: [ProcessMonitorViewModel.DisplayItem] = []
+        var currentGroupDir: String? = nil
+        var groupHasMatch = false
+
+        for item in items {
+            switch item {
+            case .projectHeader(let group):
+                currentGroupDir = group.directory
+                groupHasMatch = false
+                // 先不添加，等看组内是否有匹配
+            case .serviceRow(let service):
+                if matchedServiceIds.contains(service.id) {
+                    if !groupHasMatch, let dir = currentGroupDir {
+                        // 添加组头
+                        if let headerItem = items.first(where: { if case .projectHeader(let g) = $0, g.directory == dir { return true }; return false }) {
+                            result.append(headerItem)
+                        }
+                        groupHasMatch = true
+                    }
+                    result.append(item)
+                }
+            case .childProcessRow(let child):
+                if matchedServiceIds.contains(child.parentServiceId) {
+                    result.append(item)
+                }
+            }
+        }
+
+        return result
     }
 
     private var themeIcon: String {
@@ -45,7 +87,7 @@ struct MainView: View {
             if !viewModel.hasCompletedInitialLoad {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.processes.isEmpty {
+            } else if viewModel.processes.isEmpty && viewModel.favoriteServices.isEmpty {
                 EmptyStateView()
             } else {
                 processListContent
@@ -59,6 +101,22 @@ struct MainView: View {
         .environment(\.theme, themeSettings.colors)
         .task {
             viewModel.startMonitoring()
+        }
+        .sheet(isPresented: $showAddService) {
+            AddServiceView { favorite in
+                viewModel.addFavorite(favorite)
+            }
+            .environment(themeSettings)
+        }
+        .sheet(item: $editingFavorite) { favorite in
+            AddServiceView(
+                onAdd: { _ in },
+                onEdit: { updated in
+                    viewModel.updateFavorite(updated)
+                },
+                editingFavorite: favorite
+            )
+            .environment(themeSettings)
         }
     }
 
@@ -77,7 +135,7 @@ struct MainView: View {
                     Text(
                         activeCount > 0
                             ? "\(activeCount) active server\(activeCount == 1 ? "" : "s")"
-                            : "No active servers"
+                            : "No active server"
                     )
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
@@ -95,7 +153,7 @@ struct MainView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 11.5, weight: .regular))
                     .foregroundStyle(theme.textPrimary)
-                    .frame(width: 100)
+                    .frame(width: 60)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -133,6 +191,23 @@ struct MainView: View {
             .buttonStyle(.plain)
             .help(themeTooltip)
 
+            Button(action: { showAddService = true }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(theme.surfaceRaised)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Add Service")
+
             Button(action: { Task { await viewModel.refresh() } }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 12, weight: .medium))
@@ -149,6 +224,23 @@ struct MainView: View {
             }
             .buttonStyle(.plain)
             .help("Refresh")
+
+            Button(action: { NSApplication.shared.terminate(nil) }) {
+                Image(systemName: "power")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(theme.surfaceRaised)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
+                    )
+            }
+            .buttonStyle(.plain)
+            .help("Quit Harbor")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -157,15 +249,47 @@ struct MainView: View {
     private var processListContent: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
-                ForEach(filteredProcesses) { process in
-                    ProcessRowView(
-                        process: process,
-                        onTerminate: {
+                ForEach(filteredItems) { displayItem in
+                    ServiceListRowView(
+                        displayItem: displayItem,
+                        onToggleGroup: { directory in
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                viewModel.toggleGroupCollapse(directory)
+                            }
+                        },
+                        onToggleChildren: { serviceId in
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                viewModel.toggleChildrenCollapse(serviceId)
+                            }
+                        },
+                        onTerminate: { process in
                             withAnimation(.easeOut(duration: 0.25)) {
                                 viewModel.terminateProcess(process)
                             }
                         },
-                        onOpenURL: { viewModel.openInBrowser(process) }
+                        onOpenURL: { process in
+                            viewModel.openInBrowser(process)
+                        },
+                        onLaunch: { favorite in
+                            viewModel.launchService(favorite)
+                        },
+                        onLaunchBackground: { favorite in
+                            viewModel.launchServiceInBackground(favorite)
+                        },
+                        onRemoveFavorite: { favorite in
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                viewModel.removeFavorite(favorite)
+                            }
+                        },
+                        onFavorite: { process in
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                let fav = viewModel.addFavoriteFromProcess(process)
+                                editingFavorite = fav
+                            }
+                        },
+                        onEdit: { favorite in
+                            editingFavorite = favorite
+                        }
                     )
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)),
@@ -176,7 +300,7 @@ struct MainView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .animation(.easeInOut(duration: 0.3), value: filteredProcesses.map(\.id))
+        .animation(.easeInOut(duration: 0.3), value: filteredItems.map(\.id))
     }
 
     private func errorBanner(_ message: String) -> some View {

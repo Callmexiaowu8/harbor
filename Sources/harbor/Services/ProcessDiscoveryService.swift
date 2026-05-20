@@ -70,17 +70,18 @@ struct ProcessDiscoveryService: Sendable {
             guard !seen.contains(key) else { continue }
             seen.insert(key)
 
-            let displayName = await resolveDisplayName(pid: pid, command: command)
+            let (displayName, cwd) = await resolveDisplayNameAndCwd(pid: pid, command: command)
             let pgid = getpgid(pid)
-            processes.append(ServerProcess(pid: pid, pgid: pgid, name: displayName, command: command, port: port))
+            let ppid = await getPpid(pid: pid)
+            processes.append(ServerProcess(pid: pid, pgid: pgid, ppid: ppid, name: displayName, command: command, port: port, workingDirectory: cwd))
         }
 
         return processes
     }
 
-    private func resolveDisplayName(pid: Int32, command: String) async -> String {
+    private func resolveDisplayNameAndCwd(pid: Int32, command: String) async -> (String, String?) {
         guard let cwd = try? await getProcessCwd(pid: pid) else {
-            return command
+            return (command, nil)
         }
 
         let projectManifests: [(file: String, nameKey: String?)] = [
@@ -99,13 +100,13 @@ struct ProcessDiscoveryService: Sendable {
 
             if let nameKey = manifest.nameKey,
                let name = extractNameFromFile(atPath: path, key: nameKey) {
-                return name
+                return (name, cwd)
             }
 
-            return (cwd as NSString).lastPathComponent
+            return ((cwd as NSString).lastPathComponent, cwd)
         }
 
-        return (cwd as NSString).lastPathComponent
+        return ((cwd as NSString).lastPathComponent, cwd)
     }
 
     private func getProcessCwd(pid: Int32) async throws -> String {
@@ -119,6 +120,11 @@ struct ProcessDiscoveryService: Sendable {
             }
         }
         throw ProcessDiscoveryError.cwdNotFound
+    }
+
+    private func getPpid(pid: Int32) async -> Int32 {
+        guard let output = try? await runCommand("/bin/ps", arguments: ["-o", "ppid=", "-p", String(pid)]) else { return -1 }
+        return Int32(output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? -1
     }
 
     private func extractNameFromFile(atPath path: String, key: String) -> String? {

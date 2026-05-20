@@ -1,0 +1,15 @@
+- [x] ConfirmKind 枚举定义包含 .terminate 和 .unfavorite 两个 case
+- [x] confirming + isUnfavoriteConfirm 双状态已替换为 confirmKind: ConfirmKind? 单一状态
+- [x] 星号点击设置 confirmKind = .unfavorite
+- [x] 终止按钮点击设置 confirmKind = .terminate
+- [x] Cancel/确认操作设置 confirmKind = nil
+- [x] 取消收藏确认栏消息为 "Remove {name} from favorites?"
+- [x] 终止进程确认栏消息为 "Stop {name} on port {port}?"
+- [x] 取消收藏确认按钮标签为 "Remove"，颜色为 theme.accent
+- [x] 终止进程确认按钮标签为 "Terminate"，颜色为 theme.danger
+- [x] 取消收藏确认栏背景为 theme.accent.opacity(0.06)
+- [x] 终止进程确认栏背景为 theme.danger.opacity(0.06)
+- [x] .unfavorite 确认回调仅调用 onRemoveFavorite()，绝不调用 onTerminate()
+- [x] .terminate 确认回调仅调用 onTerminate()，绝不调用 onRemoveFavorite()
+- [x] 确认回调不依赖 item.isRunning 判断
+- [x] xcodebuild 编译通过无错误无警告
