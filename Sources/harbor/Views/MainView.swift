@@ -3,8 +3,11 @@ import SwiftUI
 struct MainView: View {
     var viewModel: ProcessMonitorViewModel
     @State private var searchText = ""
+    @State private var showSearch = false
     @State private var showAddService = false
+    @FocusState private var isSearchFocused: Bool
     @State private var editingFavorite: FavoriteService?
+    @State private var editingGroup: ProcessMonitorViewModel.ProjectGroup?
     @Environment(ThemeSettings.self) private var themeSettings
 
     private var theme: HarborColors { themeSettings.colors }
@@ -97,7 +100,7 @@ struct MainView: View {
                 errorBanner(error)
             }
         }
-        .background(theme.surface)
+        .background(.ultraThinMaterial)
         .environment(\.theme, themeSettings.colors)
         .task {
             viewModel.startMonitoring()
@@ -117,6 +120,9 @@ struct MainView: View {
                 editingFavorite: favorite
             )
             .environment(themeSettings)
+        }
+        .sheet(item: $editingGroup) { group in
+            GroupEditSheet(group: group, viewModel: viewModel, themeSettings: themeSettings)
         }
     }
 
@@ -144,103 +150,128 @@ struct MainView: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(theme.textTertiary)
-
-                TextField("Filter", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 11.5, weight: .regular))
-                    .foregroundStyle(theme.textPrimary)
-                    .frame(width: 60)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(theme.surfaceRaised)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
-            )
-
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    switch themeSettings.mode {
-                    case .system: themeSettings.mode = .light
-                    case .light: themeSettings.mode = .dark
-                    case .dark: themeSettings.mode = .system
+            HStack(spacing: 4) {
+                // Filter button / search
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        if showSearch && !searchText.isEmpty {
+                            searchText = ""
+                        }
+                        showSearch.toggle()
                     }
+                }) {
+                    Image(systemName: showSearch ? "xmark" : "magnifyingglass")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(theme.accent.opacity(0.08))
+                        )
                 }
-            }) {
-                Image(systemName: themeIcon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(theme.surfaceRaised)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
-                    )
-            }
-            .buttonStyle(.plain)
-            .help(themeTooltip)
+                .buttonStyle(.plain)
+                .help(showSearch ? "Close search" : "Filter services")
 
-            Button(action: { showAddService = true }) {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(theme.surfaceRaised)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
-                    )
-            }
-            .buttonStyle(.plain)
-            .help("Add Service")
+                if showSearch {
+                    HStack(spacing: 4) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(theme.textTertiary)
 
-            Button(action: { Task { await viewModel.refresh() } }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                    .frame(width: 28, height: 28)
+                        TextField("Filter", text: $searchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 11.5, weight: .regular))
+                            .foregroundStyle(theme.textPrimary)
+                            .focused($isSearchFocused)
+                            .frame(width: 80)
+                            .onKeyPress(.escape) {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    searchText = ""
+                                    showSearch = false
+                                }
+                                return .handled
+                            }
+                            .onChange(of: isSearchFocused) { oldValue, newValue in
+                                if !newValue && showSearch {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        searchText = ""
+                                        showSearch = false
+                                    }
+                                }
+                            }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(theme.surfaceRaised)
+                            .fill(theme.accent.opacity(0.08))
                     )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
-                    )
-            }
-            .buttonStyle(.plain)
-            .help("Refresh")
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.8, anchor: .leading)),
+                        removal: .opacity.combined(with: .scale(scale: 0.8, anchor: .leading))
+                    ))
+                }
 
-            Button(action: { NSApplication.shared.terminate(nil) }) {
-                Image(systemName: "power")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(theme.surfaceRaised)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
-                    )
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        switch themeSettings.mode {
+                        case .system: themeSettings.mode = .light
+                        case .light: themeSettings.mode = .dark
+                        case .dark: themeSettings.mode = .system
+                        }
+                    }
+                }) {
+                    Image(systemName: themeIcon)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(theme.accent.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(themeTooltip)
+
+                Button(action: { showAddService = true }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(theme.accent.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Add Service")
+
+                Button(action: { Task { await viewModel.refresh() } }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(theme.accent.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Refresh")
+
+                Button(action: { NSApplication.shared.terminate(nil) }) {
+                    Image(systemName: "power")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(theme.accent.opacity(0.08))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Quit Harbor")
             }
-            .buttonStyle(.plain)
-            .help("Quit Harbor")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -253,12 +284,12 @@ struct MainView: View {
                     ServiceListRowView(
                         displayItem: displayItem,
                         onToggleGroup: { directory in
-                            withAnimation(.easeInOut(duration: 0.25)) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 viewModel.toggleGroupCollapse(directory)
                             }
                         },
                         onToggleChildren: { serviceId in
-                            withAnimation(.easeInOut(duration: 0.25)) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 viewModel.toggleChildrenCollapse(serviceId)
                             }
                         },
@@ -289,6 +320,19 @@ struct MainView: View {
                         },
                         onEdit: { favorite in
                             editingFavorite = favorite
+                        },
+                        onEditGroup: { group in
+                            editingGroup = group
+                        },
+                        onFavoriteGroup: { group in
+                            if group.isAllFavorited {
+                                viewModel.unfavoriteGroupServices(group.directory)
+                            } else {
+                                let newFavs = viewModel.favoriteGroupServices(group.directory)
+                                if let firstFav = newFavs.first {
+                                    editingFavorite = firstFav
+                                }
+                            }
                         }
                     )
                     .transition(.asymmetric(
@@ -297,7 +341,7 @@ struct MainView: View {
                     ))
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 8)
         }
         .animation(.easeInOut(duration: 0.3), value: filteredItems.map(\.id))
@@ -327,5 +371,110 @@ struct MainView: View {
         .padding(.vertical, 10)
         .background(theme.warning.opacity(0.08))
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
+
+struct GroupEditSheet: View {
+    let group: ProcessMonitorViewModel.ProjectGroup
+    let viewModel: ProcessMonitorViewModel
+    let themeSettings: ThemeSettings
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String = ""
+    @State private var directory: String = ""
+
+    private var theme: HarborColors { themeSettings.colors }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Group")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(theme.textPrimary)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Project Name")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+
+                TextField("Project Name", text: $name)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(theme.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(theme.surfaceRaised)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Directory")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+
+                TextField("Directory", text: $directory)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(theme.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(theme.surfaceRaised)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(theme.border.opacity(0.5), lineWidth: 0.5)
+                    )
+            }
+
+            HStack {
+                Spacer()
+
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(theme.textSecondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(theme.surfaceHover)
+                )
+
+                Button("Save") {
+                    if name != group.name {
+                        viewModel.renameGroup(group.directory, to: name)
+                    }
+                    if directory != group.directory {
+                        viewModel.updateGroupDirectory(group.directory, to: directory)
+                    }
+                    dismiss()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(theme.accent)
+                )
+            }
+        }
+        .padding(20)
+        .frame(width: 300)
+        .background(theme.surface)
+        .onAppear {
+            name = group.name
+            directory = group.directory
+        }
     }
 }

@@ -55,8 +55,8 @@ struct HarborColors: Sendable {
     let terminated: Color
 
     static let dark = HarborColors(
-        accent: Color(red: 0.2, green: 0.78, blue: 0.76),
-        accentDim: Color(red: 0.15, green: 0.55, blue: 0.54),
+        accent: Color(red: 0.53, green: 0.87, blue: 1.0),
+        accentDim: Color(red: 0.4, green: 0.82, blue: 0.99),
         danger: Color(red: 0.95, green: 0.35, blue: 0.38),
         dangerDim: Color(red: 0.7, green: 0.25, blue: 0.28),
         warning: Color(red: 0.95, green: 0.7, blue: 0.25),
@@ -71,8 +71,8 @@ struct HarborColors: Sendable {
     )
 
     static let light = HarborColors(
-        accent: Color(red: 0.02, green: 0.52, blue: 0.50),
-        accentDim: Color(red: 0.02, green: 0.42, blue: 0.40),
+        accent: Color(red: 0.13, green: 0.59, blue: 0.95),
+        accentDim: Color(red: 0.1, green: 0.46, blue: 0.82),
         danger: Color(red: 0.82, green: 0.18, blue: 0.22),
         dangerDim: Color(red: 0.65, green: 0.12, blue: 0.16),
         warning: Color(red: 0.78, green: 0.52, blue: 0.04),

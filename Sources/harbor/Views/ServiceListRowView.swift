@@ -13,11 +13,13 @@ struct ServiceListRowView: View {
     let onRemoveFavorite: (FavoriteService) -> Void
     let onFavorite: (ServerProcess) -> Void
     let onEdit: (FavoriteService) -> Void
+    let onEditGroup: (ProcessMonitorViewModel.ProjectGroup) -> Void
+    let onFavoriteGroup: (ProcessMonitorViewModel.ProjectGroup) -> Void
 
     var body: some View {
         switch displayItem {
         case .projectHeader(let group):
-            ProjectGroupHeaderView(group: group, onToggle: onToggleGroup)
+            ProjectGroupHeaderView(group: group, onToggle: onToggleGroup, onEdit: onEditGroup, onFavoriteGroup: onFavoriteGroup)
         case .serviceRow(let item):
             ServiceRowContent(
                 item: item,
@@ -41,45 +43,157 @@ struct ServiceListRowView: View {
 struct ProjectGroupHeaderView: View {
     let group: ProcessMonitorViewModel.ProjectGroup
     let onToggle: (String) -> Void
+    let onEdit: (ProcessMonitorViewModel.ProjectGroup) -> Void
+    let onFavoriteGroup: (ProcessMonitorViewModel.ProjectGroup) -> Void
 
     @Environment(\.theme) private var theme
+    @State private var isHovered = false
+    @State private var isEditHovered = false
+    @State private var isStarHovered = false
+    @State private var showConfirm = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "folder.fill")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(theme.accent.opacity(0.7))
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                Button(action: {
+                    if group.isAllFavorited {
+                        withAnimation(.easeOut(duration: 0.2)) { showConfirm = true }
+                    } else {
+                        onFavoriteGroup(group)
+                    }
+                }) {
+                    Image(systemName: group.isAllFavorited ? "star.fill" : "star")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(
+                            isStarHovered
+                                ? (group.isAllFavorited ? theme.accent.opacity(0.6) : theme.accent)
+                                : (group.isAllFavorited ? theme.accent : theme.textTertiary)
+                        )
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isStarHovered = h } }
+                .help(group.isAllFavorited ? "Unfavorite group" : "Favorite group")
 
-            Text(group.name)
-                .font(.system(size: 12, weight: .bold, design: .default))
-                .foregroundStyle(theme.textPrimary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(group.name)
+                        .font(.system(size: 13, weight: .semibold, design: .default))
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
-            Spacer()
+                    Text(abbreviatedPath(group.directory))
+                        .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                        .foregroundStyle(theme.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
 
-            Text("\(group.serviceCount) service\(group.serviceCount == 1 ? "" : "s")")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(theme.textTertiary)
+                Spacer()
 
-            Image(systemName: group.isCollapsed ? "chevron.right" : "chevron.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(theme.textTertiary)
+                Button(action: { onEdit(group) }) {
+                    Image(systemName: "pencil.circle")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(isEditHovered ? theme.accent : theme.textTertiary)
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+                .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isEditHovered = h } }
+                .help("Edit group")
+                .opacity(isHovered ? 1 : 0)
+
+                Image(systemName: group.isCollapsed ? "chevron.right" : "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(theme.textTertiary)
+            }
+
+        if showConfirm {
+            HStack(spacing: 8) {
+                Text("Remove all services in \(group.name) from favorites?")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
+                    .lineLimit(1)
+
+                Spacer()
+
+                Button(action: {
+                    withAnimation(.easeOut(duration: 0.2)) { showConfirm = false }
+                }) {
+                    Text("Cancel")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(theme.surfaceHover)
+                        )
+                }
+                .buttonStyle(.plain)
+
+            Button(action: {
+                    withAnimation(.easeOut(duration: 0.2)) { showConfirm = false }
+                    onFavoriteGroup(group)
+                }) {
+                    Text("Remove")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(theme.danger)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 10)
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(theme.surfaceRaised)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(theme.border.opacity(0.4), lineWidth: 0.5)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.25)) {
+    }
+    .padding(.horizontal, 14)
+    .padding(.vertical, 12)
+    .background(
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(isHovered ? theme.surfaceHover : theme.surfaceRaised)
+    )
+    .overlay(
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(
+                isHovered ? theme.border.opacity(0.8) : theme.border.opacity(0.4),
+                lineWidth: 0.5
+            )
+    )
+    .shadow(
+        color: Color.black.opacity(isHovered ? 0.15 : 0.08),
+        radius: isHovered ? 5 : 3,
+        x: 0,
+        y: isHovered ? 2 : 1
+    )
+    .contentShape(Rectangle())
+    .onTapGesture {
+        if showConfirm {
+            withAnimation(.easeOut(duration: 0.2)) { showConfirm = false }
+        } else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 onToggle(group.directory)
             }
         }
+    }
+    .onHover { hovering in
+        withAnimation(.easeOut(duration: 0.15)) {
+            isHovered = hovering
+        }
+    }
+    }
+
+    private func abbreviatedPath(_ path: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        if path.hasPrefix(home) {
+            return "~" + path.dropFirst(home.count)
+        }
+        return path
     }
 }
 
@@ -101,10 +215,8 @@ struct ServiceRowContent: View {
     @State private var isTerminateHovered = false
     @State private var isOpenHovered = false
     @State private var isLaunchHovered = false
-    @State private var isLaunchBgHovered = false
     @State private var isStarHovered = false
     @State private var isEditHovered = false
-    @State private var isChevronHovered = false
 
     enum ConfirmKind {
         case terminate
@@ -118,42 +230,17 @@ struct ServiceRowContent: View {
                 statusIcon
 
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(item.displayName)
-                            .font(.system(size: 13, weight: .semibold, design: .default))
-                            .foregroundStyle(
-                                item.isRunning ? theme.textPrimary : theme.textSecondary
-                            )
-
-                        if !item.childProcesses.isEmpty {
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    onToggleChildren(item.id)
-                                }
-                            }) {
-                                HStack(spacing: 3) {
-                                    Image(systemName: item.isChildrenCollapsed ? "chevron.right" : "chevron.down")
-                                        .font(.system(size: 9, weight: .semibold))
-                                        .foregroundStyle(isChevronHovered ? theme.textSecondary : theme.textTertiary)
-
-                                    Text("\(item.childProcesses.count) process\(item.childProcesses.count == 1 ? "" : "es")")
-                                        .font(.system(size: 9.5, weight: .medium))
-                                        .foregroundStyle(theme.textTertiary)
-                                }
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                        .fill(isChevronHovered ? theme.surfaceHover : theme.surface)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isChevronHovered = h } }
-                        }
-                    }
+                    Text(item.displayName)
+                        .font(.system(size: 13, weight: .semibold, design: .default))
+                        .foregroundStyle(
+                            item.isRunning ? theme.textPrimary : theme.textSecondary
+                        )
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
                     detailLine
                 }
+                .layoutPriority(1)
 
                 Spacer()
 
@@ -185,20 +272,25 @@ struct ServiceRowContent: View {
                 )
         )
         .contentShape(Rectangle())
+        .onTapGesture {
+            if confirmKind != nil {
+                withAnimation(.easeOut(duration: 0.2)) { confirmKind = nil }
+            }
+        }
         .help(tooltipText)
         .onHover { hovering in
             withAnimation(.easeOut(duration: 0.15)) {
                 isHovered = hovering
             }
         }
-        .overlay(alignment: .leading) {
-            if item.isRunning {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(theme.accent)
-                    .frame(width: 2.5)
-                    .padding(.vertical, 4)
-            }
-        }
+
+        .shadow(
+            color: Color.black.opacity(isHovered ? 0.15 : 0.08),
+            radius: isHovered ? 5 : 3,
+            x: 0,
+            y: isHovered ? 2 : 1
+        )
+        .padding(.leading, item.groupKey != nil ? 20 : 0)
         .opacity(item.isFavorite && !item.isRunning ? 0.6 : 1.0)
     }
 
@@ -245,6 +337,9 @@ struct ServiceRowContent: View {
                 Text(item.favorite!.startCommand)
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(theme.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let proc = item.mainProcess {
@@ -253,8 +348,34 @@ struct ServiceRowContent: View {
                 Text(verbatim: "PID \(proc.pid)")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(theme.textTertiary)
+                    .lineLimit(1)
+
+                if !item.childProcesses.isEmpty {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            onToggleChildren(item.id)
+                        }
+                    }) {
+                        HStack(spacing: 2) {
+                            Image(systemName: item.isChildrenCollapsed ? "chevron.right" : "chevron.down")
+                                .font(.system(size: 8, weight: .semibold))
+                            Text(verbatim: "\(item.childProcesses.count)")
+                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                        }
+                        .foregroundStyle(theme.accent)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(theme.accent.opacity(0.12))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .help("Toggle child processes")
+                }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var actionArea: some View {
@@ -328,10 +449,20 @@ struct ServiceRowContent: View {
 
     private var idleFavoriteButtons: some View {
         HStack(spacing: 4) {
-            Button(action: {
-                if let fav = item.favorite { onLaunch(fav) }
-            }) {
-                Image(systemName: "apple.terminal")
+            Menu {
+                Button(action: {
+                    if let fav = item.favorite { onLaunch(fav) }
+                }) {
+                    Label("Launch in Terminal", systemImage: "apple.terminal")
+                }
+
+                Button(action: {
+                    if let fav = item.favorite { onLaunchBackground(fav) }
+                }) {
+                    Label("Launch in Background", systemImage: "play.fill")
+                }
+            } label: {
+                Image(systemName: "play.circle")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(isLaunchHovered ? theme.accent : theme.textSecondary)
                     .frame(width: 30, height: 30)
@@ -340,25 +471,10 @@ struct ServiceRowContent: View {
                             .fill(isLaunchHovered ? theme.accent.opacity(0.12) : .clear)
                     )
             }
-            .buttonStyle(.plain)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isLaunchHovered = h } }
-            .help("Launch in Terminal")
-
-            Button(action: {
-                if let fav = item.favorite { onLaunchBackground(fav) }
-            }) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(theme.accent)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(isLaunchBgHovered ? theme.accent.opacity(0.12) : theme.accent.opacity(0.12))
-                    )
-            }
-            .buttonStyle(.plain)
-            .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isLaunchBgHovered = h } }
-            .help("Launch in Background")
+            .help("Launch service")
 
             Button(action: {
                 if let fav = item.favorite { onEdit(fav) }
@@ -509,58 +625,62 @@ struct ChildProcessRowView: View {
     @State private var isTerminateHovered = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Indent connection line
-            Rectangle()
-                .fill(theme.border.opacity(0.4))
-                .frame(width: 1.5)
-                .padding(.leading, 24)
-                .padding(.trailing, 8)
+        HStack(spacing: 14) {
+            Circle()
+                .fill(theme.textTertiary.opacity(0.5))
+                .frame(width: 8, height: 8)
 
-            HStack(spacing: 10) {
-                // Small dot indicator
-                Circle()
-                    .fill(theme.textTertiary.opacity(0.5))
-                    .frame(width: 5, height: 5)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.process.name)
+                    .font(.system(size: 12, weight: .medium, design: .default))
+                    .foregroundStyle(theme.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.process.name)
-                        .font(.system(size: 12, weight: .medium, design: .default))
-                        .foregroundStyle(theme.textSecondary)
-
-                    Text(verbatim: "PID \(item.process.pid)")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(theme.textTertiary)
-                }
-
-                Spacer()
-
-                // Terminate button (visible on hover)
-                Button(action: {
-                    onTerminate(item.process)
-                }) {
-                    Image(systemName: "xmark.circle")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(isTerminateHovered ? theme.danger : theme.textTertiary)
-                        .frame(width: 24, height: 24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(isTerminateHovered ? theme.danger.opacity(0.12) : .clear)
-                        )
-                }
-                .buttonStyle(.plain)
-                .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isTerminateHovered = h } }
-                .help("Terminate child process")
-                .opacity(isHovered ? 1 : 0)
+                Text(verbatim: "PID \(item.process.pid)")
+                    .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(theme.textTertiary)
             }
-            .padding(.trailing, 14)
+
+            Spacer()
+
+            Button(action: {
+                onTerminate(item.process)
+            }) {
+                Image(systemName: "xmark.circle")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(isTerminateHovered ? theme.danger : theme.textSecondary)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(isTerminateHovered ? theme.danger.opacity(0.12) : .clear)
+                    )
+            }
+            .buttonStyle(.plain)
+            .onHover { h in withAnimation(.easeOut(duration: 0.12)) { isTerminateHovered = h } }
+            .help("Terminate child process")
+            .opacity(isHovered ? 1 : 0.5)
         }
-        .padding(.leading, 28)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isHovered ? theme.surfaceHover.opacity(0.6) : theme.surface.opacity(0.4))
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isHovered ? theme.surfaceHover : theme.surfaceRaised)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(
+                    isHovered ? theme.border.opacity(0.8) : theme.border.opacity(0.4),
+                    lineWidth: 0.5
+                )
+        )
+        .shadow(
+            color: Color.black.opacity(isHovered ? 0.15 : 0.08),
+            radius: isHovered ? 5 : 3,
+            x: 0,
+            y: isHovered ? 2 : 1
+        )
+        .padding(.leading, item.groupKey != nil ? 40 : 20)
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeOut(duration: 0.15)) {

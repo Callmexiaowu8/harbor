@@ -46,13 +46,15 @@ final class ProcessMonitorViewModel {
         let directory: String  // 工作目录
         var isCollapsed: Bool
         var serviceCount: Int
+        var isAllFavorited: Bool
 
-        init(id: String = UUID().uuidString, name: String, directory: String, isCollapsed: Bool = false, serviceCount: Int = 0) {
+        init(id: String = UUID().uuidString, name: String, directory: String, isCollapsed: Bool = false, serviceCount: Int = 0, isAllFavorited: Bool = false) {
             self.id = directory
             self.name = name
             self.directory = directory
             self.isCollapsed = isCollapsed
             self.serviceCount = serviceCount
+            self.isAllFavorited = isAllFavorited
         }
     }
 
@@ -63,6 +65,7 @@ final class ProcessMonitorViewModel {
         let mainProcess: ServerProcess?
         let childProcesses: [ServerProcess]
         var isChildrenCollapsed: Bool
+        let groupKey: String?
 
         var isFavorite: Bool { favorite != nil }
         var isRunning: Bool { mainProcess != nil }
@@ -77,6 +80,7 @@ final class ProcessMonitorViewModel {
         let id: String
         let process: ServerProcess
         let parentServiceId: String  // 所属主服务的 id
+        let groupKey: String?
     }
 
     // MARK: - Computed Properties
@@ -199,22 +203,23 @@ final class ProcessMonitorViewModel {
 
         // 3. 公共父目录分组 + 手动覆盖
 
-        // 3a. 先处理手动指定了 projectName 的收藏服务
+        // 3a. 先处理手动指定了 projectName 的收藏服务，key 使用 workingDirectory
         var manualGroups: [String: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]] = [:]
         var autoGroupCandidates: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)] = []
 
         for item in serviceItems {
             if let pname = item.favorite?.projectName, !pname.isEmpty {
-                manualGroups[pname, default: []].append(item)
+                let dir = item.workingDirectory ?? item.mainProcess?.workingDirectory ?? item.favorite?.workingDirectory ?? ""
+                manualGroups[dir, default: []].append(item)
             } else {
                 autoGroupCandidates.append(item)
             }
         }
 
-        // 3b. 对剩余服务使用公共父目录算法自动分组
-        func commonParentGrouping(_ items: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]) -> [String: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]] {
+        // 3b. 对剩余服务使用公共父目录算法自动分组，key 为完整目录路径
+        func commonParentGrouping(_ items: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]) -> [String: (items: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)], displayName: String)] {
             let paths = items.compactMap { $0.workingDirectory ?? $0.mainProcess?.workingDirectory ?? $0.favorite?.workingDirectory }
-            guard !paths.isEmpty else { return ["Other": items] }
+            guard !paths.isEmpty else { return ["Other": (items: items, displayName: "Other")] }
 
             let componentsList = paths.map { ($0, $0.components(separatedBy: "/").filter { !$0.isEmpty }) }
 
@@ -231,19 +236,24 @@ final class ProcessMonitorViewModel {
                 }
             }
 
-            var groups: [String: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]] = [:]
+            var groups: [String: (items: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)], displayName: String)] = [:]
             for item in items {
                 let dir = item.workingDirectory ?? item.mainProcess?.workingDirectory ?? item.favorite?.workingDirectory ?? ""
                 let components = dir.components(separatedBy: "/").filter { !$0.isEmpty }
-                let groupName: String
+
+                let groupKey: String
+                let displayName: String
                 if components.count > lcp.count {
-                    groupName = components[lcp.count]
+                    displayName = components[lcp.count]
+                    groupKey = "/" + Array(components.prefix(lcp.count + 1)).joined(separator: "/")
                 } else if !components.isEmpty {
-                    groupName = components.last!
+                    displayName = components.last!
+                    groupKey = dir
                 } else {
-                    groupName = "Other"
+                    displayName = "Other"
+                    groupKey = "Other"
                 }
-                groups[groupName, default: []].append(item)
+                groups[groupKey, default: ([], displayName: displayName)].items.append(item)
             }
 
             return groups
@@ -251,13 +261,20 @@ final class ProcessMonitorViewModel {
 
         let autoGroups = commonParentGrouping(autoGroupCandidates)
 
-        // 3c. 合并手动组和自动组
-        var allGroups: [String: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)]] = [:]
-        for (name, items) in manualGroups {
-            allGroups[name, default: []].append(contentsOf: items)
+        // 3c. 合并手动组和自动组，统一结构为 [String: (items, displayName)]
+        var allGroups: [String: (items: [(id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?)], displayName: String)] = [:]
+        for (dir, items) in manualGroups {
+            let displayName = URL(fileURLWithPath: dir).lastPathComponent
+            if allGroups[dir] == nil {
+                allGroups[dir] = (items: [], displayName: displayName)
+            }
+            allGroups[dir]?.items.append(contentsOf: items)
         }
-        for (name, items) in autoGroups {
-            allGroups[name, default: []].append(contentsOf: items)
+        for (dir, data) in autoGroups {
+            if allGroups[dir] == nil {
+                allGroups[dir] = (items: [], displayName: data.displayName)
+            }
+            allGroups[dir]?.items.append(contentsOf: data.items)
         }
 
         // 排序：Other 放最后
@@ -270,27 +287,31 @@ final class ProcessMonitorViewModel {
         // 4. 构建 DisplayItem 列表 — 仅多服务组显示组头
         var displayItems: [DisplayItem] = []
 
-        for key in sortedGroupKeys {
-            guard let groupItems = allGroups[key] else { continue }
-            let isCollapsed = collapsedGroups.contains(key)
+        for dir in sortedGroupKeys {
+            guard let groupData = allGroups[dir] else { continue }
+            let isCollapsed = collapsedGroups.contains(dir)
 
-            if groupItems.count >= 2 {
+            if groupData.items.count >= 2 {
+                let allFavorited = groupData.items.allSatisfy { item in
+                    item.favorite != nil
+                }
                 let projectGroup = ProjectGroup(
-                    name: key,
-                    directory: key,
+                    name: groupData.displayName,
+                    directory: dir,
                     isCollapsed: isCollapsed,
-                    serviceCount: groupItems.count
+                    serviceCount: groupData.items.count,
+                    isAllFavorited: allFavorited
                 )
                 displayItems.append(.projectHeader(projectGroup))
 
                 if !isCollapsed {
-                    for item in groupItems {
-                        appendServiceAndChildren(item: item, to: &displayItems)
+                    for item in groupData.items {
+                        appendServiceAndChildren(item: item, groupKey: dir, to: &displayItems)
                     }
                 }
             } else {
-                for item in groupItems {
-                    appendServiceAndChildren(item: item, to: &displayItems)
+                for item in groupData.items {
+                    appendServiceAndChildren(item: item, groupKey: nil, to: &displayItems)
                 }
             }
         }
@@ -313,6 +334,57 @@ final class ProcessMonitorViewModel {
             collapsedChildren.remove(serviceId)
         } else {
             collapsedChildren.insert(serviceId)
+        }
+    }
+
+    func renameGroup(_ oldKey: String, to newName: String) {
+        for index in favoriteServices.indices {
+            if let pname = favoriteServices[index].projectName, !pname.isEmpty && pname == oldKey {
+                favoriteServices[index].projectName = newName
+            }
+        }
+        persistenceService.saveFavoriteServices(favoriteServices)
+    }
+
+    func updateGroupDirectory(_ oldKey: String, to newDirectory: String) {
+        for index in favoriteServices.indices {
+            if let pname = favoriteServices[index].projectName, !pname.isEmpty && pname == oldKey {
+                favoriteServices[index].workingDirectory = newDirectory
+            }
+        }
+        persistenceService.saveFavoriteServices(favoriteServices)
+    }
+
+    func favoriteGroupServices(_ groupKey: String) -> [FavoriteService] {
+        var newFavorites: [FavoriteService] = []
+        // Find all services in this group that are not yet favorited
+        for item in serviceListItems {
+            if case .serviceRow(let serviceItem) = item,
+               serviceItem.groupKey == groupKey,
+               !serviceItem.isFavorite,
+               let proc = serviceItem.mainProcess {
+                let fav = FavoriteService(
+                    name: serviceItem.displayName,
+                    workingDirectory: proc.workingDirectory ?? "",
+                    startCommand: proc.command,
+                    port: proc.port,
+                    projectName: groupKey
+                )
+                favoriteServices.append(fav)
+                newFavorites.append(fav)
+            }
+        }
+        if !newFavorites.isEmpty {
+            persistenceService.saveFavoriteServices(favoriteServices)
+        }
+        return newFavorites
+    }
+
+    func unfavoriteGroupServices(_ groupKey: String) {
+        let favIdsToRemove = Set(favoriteServices.filter { $0.projectName == groupKey }.map(\.id))
+        if !favIdsToRemove.isEmpty {
+            favoriteServices = favoriteServices.filter { !favIdsToRemove.contains($0.id) }
+            persistenceService.saveFavoriteServices(favoriteServices)
         }
     }
 
@@ -427,7 +499,7 @@ final class ProcessMonitorViewModel {
     }
 
     func removeFavorite(_ favorite: FavoriteService) {
-        favoriteServices.removeAll { $0.id == favorite.id }
+        favoriteServices = favoriteServices.filter { $0.id != favorite.id }
         persistenceService.saveFavoriteServices(favoriteServices)
     }
 
@@ -475,6 +547,7 @@ final class ProcessMonitorViewModel {
 
     private func appendServiceAndChildren(
         item: (id: String, favorite: FavoriteService?, mainProcess: ServerProcess?, childProcesses: [ServerProcess], workingDirectory: String?),
+        groupKey: String?,
         to displayItems: inout [DisplayItem]
     ) {
         let isChildrenCollapsed = collapsedChildren.contains(item.id)
@@ -483,7 +556,8 @@ final class ProcessMonitorViewModel {
             favorite: item.favorite,
             mainProcess: item.mainProcess,
             childProcesses: item.childProcesses,
-            isChildrenCollapsed: isChildrenCollapsed
+            isChildrenCollapsed: isChildrenCollapsed,
+            groupKey: groupKey
         )
         displayItems.append(.serviceRow(serviceRow))
 
@@ -492,7 +566,8 @@ final class ProcessMonitorViewModel {
                 let childItem = ChildProcessItem(
                     id: "child-\(childProc.id)",
                     process: childProc,
-                    parentServiceId: item.id
+                    parentServiceId: item.id,
+                    groupKey: groupKey
                 )
                 displayItems.append(.childProcessRow(childItem))
             }

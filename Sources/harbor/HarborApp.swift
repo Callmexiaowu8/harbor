@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 420, height: 480)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: rootView)
+        popover.contentViewController?.view.wantsLayer = true
+        popover.contentViewController?.view.layer?.backgroundColor = NSColor.clear.cgColor
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 

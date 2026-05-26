@@ -1,0 +1,5 @@
+- [x] 分组字典 key 使用项目所在目录路径（非项目名）
+- [x] ProjectGroup.directory 存储路径，ProjectGroup.name 存储显示名
+- [x] 取消收藏后星标立即消失，服务从收藏列表移除
+- [x] 已停止服务的 startCommand 文本不溢出卡片边界
+- [x] 构建通过
